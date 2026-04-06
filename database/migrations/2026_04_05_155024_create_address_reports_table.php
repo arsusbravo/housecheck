@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('address_reports', function (Blueprint $table) {
             $table->id();
-            $table->string('address', 255)->index();
+            $table->string('address', 180)->index();
             $table->string('postcode', 10)->index();
             $table->string('city', 255)->nullable();
             $table->string('pdok_id', 255)->nullable()->index();

@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useRef, useState } from 'react';
 
+import LoadingOverlay from '@/components/loading-overlay';
 import type { AddressSuggestion } from '@/types/huischeck';
 
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number) {
@@ -12,11 +13,8 @@ function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: numb
 }
 
 interface AddressSearchProps {
-    /** Compact mode for use in headers/navbars */
     compact?: boolean;
-    /** Auto-focus the input on mount */
     autoFocus?: boolean;
-    /** Placeholder text */
     placeholder?: string;
 }
 
@@ -78,7 +76,9 @@ export default function AddressSearch({
     }
 
     return (
-        <div className="relative">
+        <>
+            {checking && <LoadingOverlay />}
+            <div className="relative">
             <div
                 className="flex items-center overflow-hidden rounded-lg border"
                 style={{
@@ -88,7 +88,8 @@ export default function AddressSearch({
                     transition: 'border-color 0.2s',
                 }}
             >
-                <div className={compact ? 'pl-3' : 'pl-4'} style={{ color: '#9C9689' }}>
+                {/* Hide search icon on mobile compact */}
+                <div className={compact ? 'hidden pl-3 sm:block' : 'pl-4'} style={{ color: '#9C9689' }}>
                     <svg
                         width={compact ? '15' : '18'}
                         height={compact ? '15' : '18'}
@@ -110,14 +111,14 @@ export default function AddressSearch({
                     onChange={handleInput}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className={`flex-1 border-0 bg-transparent outline-none ${compact ? 'px-2 py-2.5 text-sm' : 'px-3 py-4 text-base'}`}
+                    className={`min-w-0 flex-1 border-0 bg-transparent outline-none ${compact ? 'px-2 py-2 text-xs sm:text-sm' : 'px-3 py-3.5 text-base sm:py-4'}`}
                     style={{ color: '#1A1A1A' }}
                     autoFocus={autoFocus}
                 />
                 {loading && (
-                    <div className="pr-3">
+                    <div className="pr-2 sm:pr-3">
                         <div
-                            className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+                            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent sm:h-4 sm:w-4"
                             style={{ borderColor: '#D4A853', borderTopColor: 'transparent' }}
                         />
                     </div>
@@ -126,14 +127,14 @@ export default function AddressSearch({
                     onClick={handleCheck}
                     disabled={!selected || checking}
                     type="button"
-                    className={`mr-1.5 rounded-md font-semibold transition-all ${compact ? 'px-4 py-1.5 text-xs' : 'px-5 py-2.5 text-sm'}`}
+                    className={`mr-1 shrink-0 rounded-md font-semibold transition-all sm:mr-1.5 ${compact ? 'px-2.5 py-1.5 text-[10px] sm:px-4 sm:text-xs' : 'px-4 py-2 text-sm sm:px-5 sm:py-2.5'}`}
                     style={{
                         backgroundColor: selected && !checking ? '#0B1D3A' : '#E5E2DB',
                         color: selected && !checking ? '#FFFFFF' : '#9C9689',
                         cursor: selected && !checking ? 'pointer' : 'default',
                     }}
                 >
-                    {checking ? 'Bezig...' : 'Analyseer'}
+                    {checking ? '...' : compact ? 'Zoek' : 'Analyseer'}
                 </button>
             </div>
 
@@ -171,5 +172,6 @@ export default function AddressSearch({
                 </div>
             )}
         </div>
+        </>
     );
 }

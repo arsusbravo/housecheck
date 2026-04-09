@@ -21,7 +21,8 @@ return new class extends Migration
             $table->text('soil_data')->nullable();
             $table->text('climate_data')->nullable();
             $table->text('neighborhood_data')->nullable();
-            $table->text('raw_responses')->nullable(); // full API responses for debugging
+            $table->text('raw_responses')->nullable();
+            $table->text('nearby_data')->nullable();
             $table->timestamp('fetched_at');
             $table->timestamps();
 

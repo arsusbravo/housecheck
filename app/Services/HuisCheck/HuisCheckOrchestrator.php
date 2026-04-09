@@ -14,6 +14,7 @@ class HuisCheckOrchestrator
         private BodemService $bodem,
         private KlimaatService $klimaat,
         private CbsService $cbs,
+        private NearbyService $nearby,
     ) {}
 
     /**
@@ -64,6 +65,7 @@ class HuisCheckOrchestrator
                 'soil_data' => $data['soil'],
                 'climate_data' => $data['climate'],
                 'neighborhood_data' => $data['neighborhood'],
+                'nearby_data' => $data['nearby'],
                 'raw_responses' => $data['raw'] ?? null,
                 'fetched_at' => now(),
             ]
@@ -88,9 +90,10 @@ class HuisCheckOrchestrator
         $lng = $location['lng'];
         $postcode = $location['postcode'];
         $houseNumber = $location['house_number'];
+        $numId = $location['adresseerbaarobject_id'] ?? '';
 
-        // Phase 2: Building specs (spatial query using coordinates)
-        $bagData = $this->bag->getByCoordinates($lat, $lng);
+        // Phase 2: Building specs (Kadaster API if key available, WFS fallback)
+        $bagData = $this->bag->getByAddress($numId, $lat, $lng);
 
         // Phase 3: Energy label
         $energyData = $this->epOnline->getByAddress(
@@ -104,6 +107,7 @@ class HuisCheckOrchestrator
         $soilData = $this->bodem->getByCoordinates($lat, $lng);
         $climateData = $this->klimaat->getByCoordinates($lat, $lng);
         $neighborhoodData = $this->cbs->getByCoordinates($lat, $lng);
+        $nearbyData = $this->nearby->getByCoordinates($lat, $lng);
 
         return [
             'bag' => $bagData,
@@ -111,6 +115,7 @@ class HuisCheckOrchestrator
             'soil' => $soilData,
             'climate' => $climateData,
             'neighborhood' => $neighborhoodData,
+            'nearby' => $nearbyData,
         ];
     }
 }

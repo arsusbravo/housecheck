@@ -19,6 +19,7 @@ class AddressReport extends Model
         'soil_data',
         'climate_data',
         'neighborhood_data',
+        'nearby_data',
         'raw_responses',
         'fetched_at',
     ];
@@ -31,6 +32,7 @@ class AddressReport extends Model
             'soil_data' => 'array',
             'climate_data' => 'array',
             'neighborhood_data' => 'array',
+            'nearby_data' => 'array',
             'raw_responses' => 'array',
             'fetched_at' => 'datetime',
         ];
@@ -78,8 +80,9 @@ class AddressReport extends Model
             'soil' => $this->soil_data,
             'climate' => $this->climate_data,
             'neighborhood' => $this->neighborhood_data,
+            'nearby' => $this->nearby_data,
             'fetched_at' => $this->fetched_at?->toIso8601String(),
-            'age_days' => (int) $this->fetched_at?->diffInDays(now()),
+            'age_days' => $this->fetched_at?->diffInDays(now()),
         ];
     }
 }

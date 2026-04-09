@@ -69,7 +69,35 @@ export interface NeighborhoodData {
     distance_supermarket: number | null;
     distance_school: number | null;
     distance_gp: number | null;
+    pct_koopwoningen: number | null;
+    pct_huurwoningen: number | null;
+    cars_per_household: number | null;
     message?: string;
+}
+
+export interface NearbyItem {
+    name: string | null;
+    distance_m: number;
+    distance_km: number;
+}
+
+export interface NearbyCategory {
+    nearest_name: string | null;
+    nearest_distance_m: number | null;
+    nearest_distance_km: number | null;
+    count: number;
+    items: NearbyItem[];
+}
+
+export interface NearbyData {
+    supermarket: NearbyCategory;
+    school: NearbyCategory;
+    doctor: NearbyCategory;
+    park: NearbyCategory;
+    station: NearbyCategory;
+    pharmacy: NearbyCategory;
+    restaurant: NearbyCategory;
+    childcare: NearbyCategory;
 }
 
 export interface AddressReport {
@@ -85,6 +113,7 @@ export interface AddressReport {
     soil: SoilData | null;
     climate: ClimateData | null;
     neighborhood: NeighborhoodData | null;
+    nearby: NearbyData | null;
     fetched_at: string | null;
     age_days: number | null;
 }

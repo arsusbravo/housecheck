@@ -47,7 +47,7 @@ function Label({ children }: { children: React.ReactNode }) {
 function Value({ children, large }: { children: React.ReactNode; large?: boolean }) {
     return (
         <span
-            className={`block font-semibold ${large ? 'text-2xl' : 'text-base'}`}
+            className={`block font-semibold ${large ? 'text-xl sm:text-2xl' : 'text-base'}`}
             style={{ color: C.text, fontFamily: large ? serif : sans }}
         >
             {children ?? '—'}
@@ -57,7 +57,7 @@ function Value({ children, large }: { children: React.ReactNode; large?: boolean
 
 function DataCell({ label, value, suffix = '' }: { label: string; value: string | number | null | undefined; suffix?: string }) {
     return (
-        <div className="py-3">
+        <div className="py-2.5 sm:py-3">
             <Label>{label}</Label>
             <Value>{value != null ? `${value}${suffix}` : null}</Value>
         </div>
@@ -70,15 +70,15 @@ function Section({ title, children, available = true }: { title: string; childre
             className="overflow-hidden rounded-lg border"
             style={{ backgroundColor: C.surface, borderColor: C.border }}
         >
-            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
+            <div className="px-4 py-3 sm:px-6 sm:py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <h2
-                    className="text-lg font-bold tracking-tight"
+                    className="text-base font-bold tracking-tight sm:text-lg"
                     style={{ fontFamily: serif, color: C.navy }}
                 >
                     {title}
                 </h2>
             </div>
-            <div className="px-6 py-5">
+            <div className="px-4 py-4 sm:px-6 sm:py-5">
                 {available ? children : (
                     <p className="text-sm italic" style={{ color: C.faint }}>
                         Geen gegevens beschikbaar voor dit adres.
@@ -100,7 +100,7 @@ function RiskIndicator({ level, label }: { level: RiskLevel; label?: string }) {
     const c = config[level] ?? config.onbekend;
 
     return (
-        <div className="rounded-md px-4 py-3 text-center" style={{ backgroundColor: c.bg }}>
+        <div className="rounded-md px-3 py-2.5 text-center sm:px-4 sm:py-3" style={{ backgroundColor: c.bg }}>
             {label && <Label>{label}</Label>}
             <span className="mt-1 block text-sm font-bold" style={{ color: c.text }}>
                 {c.display}
@@ -121,7 +121,7 @@ function EnergyBadge({ label }: { label: string | null }) {
 
     return (
         <span
-            className="inline-flex items-center rounded px-4 py-2 text-xl font-bold text-white"
+            className="inline-flex items-center rounded px-3 py-1.5 text-lg font-bold text-white sm:px-4 sm:py-2 sm:text-xl"
             style={{ backgroundColor: colors[label] ?? C.faint, fontFamily: sans }}
         >
             {label}
@@ -178,26 +178,26 @@ const AGE_GROUPS = [
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 function Report({ report }: ReportProps) {
-    const { building, energy, soil, climate, neighborhood, coordinates } = report;
+    const { building, energy, soil, climate, neighborhood, nearby, coordinates } = report;
     const verdicts = buildVerdicts(building, energy, soil, climate);
 
     return (
         <div>
             {/* Header bar with search */}
             <div style={{ backgroundColor: C.navy }}>
-                <div className="mx-auto max-w-3xl px-6 py-3">
-                    <div className="flex items-center gap-4">
+                <div className="mx-auto max-w-3xl px-3 py-2.5 sm:px-6 sm:py-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         <Link
                             href="/"
-                            className="shrink-0 text-xs font-bold uppercase tracking-widest"
+                            className="shrink-0 text-[10px] font-bold uppercase tracking-widest sm:text-xs"
                             style={{ color: C.gold, fontFamily: sans }}
                         >
                             HuisCheck
                         </Link>
-                        <div className="flex-1">
+                        <div className="min-w-0 flex-1">
                             <AddressSearch
                                 compact
-                                placeholder="Zoek een ander adres..."
+                                placeholder="Zoek ander adres..."
                             />
                         </div>
                     </div>
@@ -206,18 +206,18 @@ function Report({ report }: ReportProps) {
 
             {/* Title section */}
             <div style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.border}` }}>
-                <div className="mx-auto max-w-3xl px-6 py-8">
+                <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-8">
                     <Label>Adresrapportage</Label>
                     <h1
-                        className="mt-2 text-2xl font-bold tracking-tight"
+                        className="mt-1.5 text-xl font-bold tracking-tight sm:mt-2 sm:text-2xl"
                         style={{ fontFamily: serif, color: C.navy }}
                     >
                         {report.address}
                     </h1>
-                    <p className="mt-1 text-sm" style={{ color: C.muted }}>
+                    <p className="mt-1 text-xs sm:text-sm" style={{ color: C.muted }}>
                         {report.postcode} {report.city}
                         {report.age_days != null && (
-                            <span className="ml-3" style={{ color: C.faint }}>
+                            <span className="ml-2 sm:ml-3" style={{ color: C.faint }}>
                                 Opgehaald {report.age_days === 0 ? 'vandaag' : `${report.age_days} dag${report.age_days !== 1 ? 'en' : ''} geleden`}
                             </span>
                         )}
@@ -226,19 +226,21 @@ function Report({ report }: ReportProps) {
             </div>
 
             {/* Content */}
-            <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
+            <div className="mx-auto max-w-3xl space-y-4 px-3 py-5 sm:space-y-6 sm:px-6 sm:py-8">
+                {/* Map */}
                 {coordinates?.lat != null && coordinates?.lng != null && (
                     <AddressMap lat={coordinates.lat} lng={coordinates.lng} address={report.address} />
                 )}
 
+                {/* Verdicts */}
                 {verdicts.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {verdicts.map(({ label, type }, i) => {
                             const s = verdictStyle[type];
                             return (
                                 <span
                                     key={i}
-                                    className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold"
+                                    className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-semibold sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs"
                                     style={{ backgroundColor: s.bg, color: s.text }}
                                 >
                                     {s.icon} {label}
@@ -248,9 +250,10 @@ function Report({ report }: ReportProps) {
                     </div>
                 )}
 
+                {/* Building */}
                 <Section title="Gebouw" available={!!building}>
                     {building && (
-                        <div className="grid grid-cols-2 gap-x-8">
+                        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8">
                             <DataCell label="Bouwjaar" value={building.bouwjaar} />
                             <DataCell label="Oppervlakte" value={building.oppervlakte} suffix=" m²" />
                             <DataCell label="Status" value={building.status} />
@@ -262,9 +265,10 @@ function Report({ report }: ReportProps) {
                     )}
                 </Section>
 
+                {/* Energy */}
                 <Section title="Energielabel" available={!!energy}>
                     {energy && (
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between gap-4">
                             <div>
                                 <EnergyBadge label={energy.label} />
                                 {energy.registration_date && (
@@ -288,6 +292,124 @@ function Report({ report }: ReportProps) {
                     )}
                 </Section>
 
+                {/* Neighborhood Stats */}
+                <Section title="Buurtstatistieken" available={!!neighborhood?.neighborhood_name}>
+                    {neighborhood && (
+                        <div>
+                            <p className="mb-3 text-sm sm:mb-4" style={{ color: C.muted }}>
+                                <span className="font-semibold" style={{ color: C.text }}>{neighborhood.neighborhood_name}</span>
+                                {neighborhood.municipality && `, ${neighborhood.municipality}`}
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8">
+                                <DataCell label="Inwoners" value={neighborhood.population} />
+                                <DataCell label="Dichtheid" value={neighborhood.population_density} suffix="/km²" />
+                                <DataCell label="Huishoudens" value={neighborhood.households} />
+                                <DataCell label="Huishoudgrootte" value={neighborhood.avg_household_size} />
+                                {neighborhood.avg_income && (
+                                    <DataCell
+                                        label="Gem. inkomen"
+                                        value={`€${Number(neighborhood.avg_income).toLocaleString('nl-NL')}`}
+                                    />
+                                )}
+                                {neighborhood.avg_property_value && (
+                                    <DataCell
+                                        label="Gem. WOZ-waarde"
+                                        value={`€${Number(neighborhood.avg_property_value).toLocaleString('nl-NL')}`}
+                                    />
+                                )}
+                                {neighborhood.cars_per_household && (
+                                    <DataCell label="Auto's per huishouden" value={neighborhood.cars_per_household} />
+                                )}
+                            </div>
+
+                            {neighborhood.pct_0_14 != null && (
+                                <div className="mt-5 sm:mt-6">
+                                    <Label>Leeftijdsverdeling</Label>
+                                    <div className="mt-2 flex h-6 gap-px overflow-hidden rounded">
+                                        {AGE_GROUPS.map(({ key, color, label }) => {
+                                            const val = neighborhood[key];
+                                            if (!val || val <= 0) return null;
+                                            return (
+                                                <div
+                                                    key={key}
+                                                    className="relative"
+                                                    style={{ width: `${val}%`, backgroundColor: color }}
+                                                    title={`${label}: ${val}%`}
+                                                >
+                                                    {val > 10 && (
+                                                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-sm">
+                                                            {val}%
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-3 sm:gap-4">
+                                        {AGE_GROUPS.map(({ key, color, label }) => (
+                                            <div key={key} className="flex items-center gap-1">
+                                                <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: color }} />
+                                                <span className="text-[10px]" style={{ color: C.faint }}>{label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </Section>
+
+                {/* Nearby Amenities */}
+                <Section title="In de buurt" available={!!nearby}>
+                    {nearby && (
+                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
+                            {([
+                                { key: 'supermarket' as const, icon: '🛒', label: 'Supermarkt' },
+                                { key: 'school' as const, icon: '🏫', label: 'Basisschool' },
+                                { key: 'doctor' as const, icon: '🏥', label: 'Huisarts' },
+                                { key: 'park' as const, icon: '🌳', label: 'Park' },
+                                { key: 'station' as const, icon: '🚉', label: 'Station' },
+                                { key: 'pharmacy' as const, icon: '💊', label: 'Apotheek' },
+                                { key: 'restaurant' as const, icon: '🍽️', label: 'Restaurant' },
+                                { key: 'childcare' as const, icon: '👶', label: 'Kinderopvang' },
+                            ]).map(({ key, icon, label }) => {
+                                const cat = nearby[key];
+                                if (!cat?.nearest_name) return null;
+
+                                return (
+                                    <div
+                                        key={key}
+                                        className="flex items-center gap-3 rounded-md px-3 py-2.5 sm:px-4 sm:py-3"
+                                        style={{ backgroundColor: C.bg }}
+                                    >
+                                        <span className="shrink-0 text-lg">{icon}</span>
+                                        <div className="min-w-0 flex-1">
+                                            <Label>{label}</Label>
+                                            <p className="mt-0.5 text-sm font-semibold leading-tight" style={{ color: C.text }}>
+                                                {cat.nearest_name}
+                                            </p>
+                                        </div>
+                                        <div className="shrink-0 text-right">
+                                            <span className="text-sm font-semibold" style={{ color: C.text }}>
+                                                {cat.nearest_distance_m! < 1000
+                                                    ? `${cat.nearest_distance_m}m`
+                                                    : `${cat.nearest_distance_km}km`}
+                                            </span>
+                                            {cat.count > 1 && (
+                                                <p className="text-[10px]" style={{ color: C.faint }}>
+                                                    {cat.count} in buurt
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </Section>
+
+                {/* Soil */}
                 <Section title="Bodemkwaliteit" available={soil?.has_data !== false}>
                     {soil && (
                         <div>
@@ -323,13 +445,14 @@ function Report({ report }: ReportProps) {
                     )}
                 </Section>
 
+                {/* Climate */}
                 <Section title="Klimaatrisico" available={!!climate}>
                     {climate && (
                         <div>
                             {climate.viewer_url ? (
                                 <div className="rounded-md px-4 py-4 text-center" style={{ backgroundColor: C.bg }}>
                                     <p className="mb-3 text-sm" style={{ color: C.muted }}>
-                                        {climate.message ?? 'Bekijk de Klimaateffectatlas voor risico-informatie over wateroverlast, hittestress en bodemdaling.'}
+                                        {climate.message ?? 'Bekijk de Klimaateffectatlas voor risico-informatie.'}
                                     </p>
                                     <a
                                         href={climate.viewer_url}
@@ -347,72 +470,10 @@ function Report({ report }: ReportProps) {
                                     </a>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                                     <RiskIndicator level={climate.flood_risk?.risk_level ?? 'onbekend'} label="Wateroverlast" />
                                     <RiskIndicator level={climate.heat_stress?.risk_level ?? 'onbekend'} label="Hittestress" />
                                     <RiskIndicator level={climate.subsidence?.risk_level ?? 'onbekend'} label="Bodemdaling" />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </Section>
-
-                <Section title="Buurtstatistieken" available={!!neighborhood?.neighborhood_name}>
-                    {neighborhood && (
-                        <div>
-                            <p className="mb-4 text-sm" style={{ color: C.muted }}>
-                                <span className="font-semibold" style={{ color: C.text }}>{neighborhood.neighborhood_name}</span>
-                                {neighborhood.municipality && `, ${neighborhood.municipality}`}
-                            </p>
-
-                            <div className="grid grid-cols-2 gap-x-8">
-                                <DataCell label="Inwoners" value={neighborhood.population} />
-                                <DataCell label="Dichtheid" value={neighborhood.population_density} suffix="/km²" />
-                                <DataCell
-                                    label="Gem. inkomen"
-                                    value={neighborhood.avg_income ? `€${Number(neighborhood.avg_income).toLocaleString('nl-NL')}` : null}
-                                />
-                                <DataCell
-                                    label="Gem. WOZ-waarde"
-                                    value={neighborhood.avg_property_value ? `€${Number(neighborhood.avg_property_value).toLocaleString('nl-NL')}` : null}
-                                />
-                                <DataCell label="Huishoudgrootte" value={neighborhood.avg_household_size} />
-                                <DataCell label="Afstand supermarkt" value={neighborhood.distance_supermarket} suffix=" km" />
-                                <DataCell label="Afstand school" value={neighborhood.distance_school} suffix=" km" />
-                                <DataCell label="Afstand huisarts" value={neighborhood.distance_gp} suffix=" km" />
-                            </div>
-
-                            {neighborhood.pct_0_14 != null && (
-                                <div className="mt-6">
-                                    <Label>Leeftijdsverdeling</Label>
-                                    <div className="mt-2 flex h-6 gap-px overflow-hidden rounded">
-                                        {AGE_GROUPS.map(({ key, color, label }) => {
-                                            const val = neighborhood[key];
-                                            if (!val || val <= 0) return null;
-                                            return (
-                                                <div
-                                                    key={key}
-                                                    className="relative"
-                                                    style={{ width: `${val}%`, backgroundColor: color }}
-                                                    title={`${label}: ${val}%`}
-                                                >
-                                                    {val > 10 && (
-                                                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-sm">
-                                                            {val}%
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="mt-2 flex gap-4">
-                                        {AGE_GROUPS.map(({ key, color, label }) => (
-                                            <div key={key} className="flex items-center gap-1">
-                                                <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: color }} />
-                                                <span className="text-[10px]" style={{ color: C.faint }}>{label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
                             )}
                         </div>

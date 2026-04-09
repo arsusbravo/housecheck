@@ -7,6 +7,7 @@ use App\Services\HuisCheck\BodemService;
 use App\Services\HuisCheck\CbsService;
 use App\Services\HuisCheck\EpOnlineService;
 use App\Services\HuisCheck\KlimaatService;
+use App\Services\HuisCheck\NearbyService;
 use App\Services\HuisCheck\PdokService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -122,6 +123,22 @@ class HuisCheckDebug extends Command
         $this->info('=== Klimaat ===');
         $klimaat = app(KlimaatService::class)->getByCoordinates($lat, $lng);
         $this->line(json_encode($klimaat, JSON_PRETTY_PRINT));
+
+        // 7. Nearby (OpenStreetMap)
+        $this->newLine();
+        $this->info('=== Nearby (OSM) ===');
+        $nearby = app(NearbyService::class)->getByCoordinates($lat, $lng);
+        if ($nearby) {
+            foreach ($nearby as $key => $cat) {
+                if ($cat['nearest_name']) {
+                    $this->line("  {$key}: {$cat['nearest_name']} ({$cat['nearest_distance_m']}m) — {$cat['count']} in de buurt");
+                } else {
+                    $this->line("  {$key}: geen gevonden");
+                }
+            }
+        } else {
+            $this->error('Overpass API failed');
+        }
     }
 
     private function wgs84ToRd(float $lat, float $lng): array

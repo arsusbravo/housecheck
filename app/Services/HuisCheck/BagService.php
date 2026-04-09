@@ -8,15 +8,78 @@ use Illuminate\Support\Facades\Log;
 class BagService
 {
     /**
-     * Get building data using a spatial query with coordinates.
+     * Get building data. Tries Kadaster API first (if key available),
+     * then falls back to spatial WFS query.
+     */
+    public function getByAddress(string $objectId, float $lat, float $lng): ?array
+    {
+        $apiKey = config('huischeck.bag_api_key');
+
+        if ($apiKey && $objectId) {
+            $result = $this->fromKadasterApi($objectId, $apiKey);
+            if ($result) return $result;
+        }
+
+        return $this->getByCoordinates($lat, $lng);
+    }
+
+    /**
+     * Official Kadaster BAG API Individuele Bevragingen v2.
+     * Uses the nummeraanduiding_id from PDOK for exact lookup.
+     */
+    private function fromKadasterApi(string $objectId, string $apiKey): ?array
+    {
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'X-Api-Key' => $apiKey,
+                    'Accept' => 'application/hal+json',
+                    'Accept-Crs' => 'epsg:28992',
+                ])
+                ->get('https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/adressenuitgebreid', [
+                    'adresseerbaarObjectIdentificatie' => $objectId,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning('BAG Kadaster API failed', [
+                    'status' => $response->status(),
+                    'body' => substr($response->body(), 0, 300),
+                ]);
+                return null;
+            }
+
+            $data = $response->json('_embedded.adressen.0');
+
+            if (!$data) {
+                Log::info('BAG Kadaster API returned no adressen', ['id' => $objectId]);
+                return null;
+            }
+
+            $gebruiksdoelen = $data['gebruiksdoelen'] ?? [];
+
+            return [
+                'bouwjaar' => $data['oorspronkelijkBouwjaar'] ?? null,
+                'oppervlakte' => $data['oppervlakte'] ?? null,
+                'gebruiksdoel' => is_array($gebruiksdoelen) ? $gebruiksdoelen : [$gebruiksdoelen],
+                'status' => $data['statusVerblijfsobject'] ?? null,
+                'pandId' => $data['pandIdentificaties'][0] ?? null,
+                'source' => 'kadaster',
+            ];
+        } catch (\Throwable $e) {
+            Log::error('BAG Kadaster API error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Fallback: spatial WFS query using RD coordinates.
      */
     public function getByCoordinates(float $lat, float $lng): ?array
     {
         try {
-            // Convert WGS84 to Rijksdriehoek — BAG WFS uses EPSG:28992
             $rd = $this->wgs84ToRd($lat, $lng);
 
-            $buffer = 10; // 10m around the point
+            $buffer = 10;
             $bbox = implode(',', [
                 $rd['x'] - $buffer,
                 $rd['y'] - $buffer,
@@ -42,11 +105,11 @@ class BagService
             $props = $response->json('features.0.properties');
 
             if (!$props) {
-                // Try wider (50m) — point might be slightly off
+                // Try wider (50m)
                 return $this->widerSpatialQuery($rd['x'], $rd['y']);
             }
 
-            return $this->normalize($props);
+            return $this->normalizeWfs($props);
         } catch (\Throwable $e) {
             Log::error('BAG spatial error', ['error' => $e->getMessage()]);
             return null;
@@ -73,15 +136,15 @@ class BagService
 
             $props = $response->json('features.0.properties');
 
-            return $props ? $this->normalize($props) : null;
+            return $props ? $this->normalizeWfs($props) : null;
         } catch (\Throwable $e) {
             return null;
         }
     }
 
-    private function normalize(array $props): array
+    private function normalizeWfs(array $props): array
     {
-        $doel = $props['gebruiksdoel'] ?? $props['gebruiksdoelen'] ?? [];
+        $doel = $props['gebruiksdoel'] ?? [];
 
         return [
             'bouwjaar' => $props['bouwjaar'] ?? null,
@@ -89,12 +152,10 @@ class BagService
             'gebruiksdoel' => is_string($doel) ? array_map('trim', explode(',', $doel)) : (is_array($doel) ? $doel : []),
             'status' => $props['status'] ?? null,
             'pandId' => $props['pandidentificatie'] ?? null,
+            'source' => 'wfs',
         ];
     }
 
-    /**
-     * WGS84 (lat/lng) to Rijksdriehoek (EPSG:28992).
-     */
     private function wgs84ToRd(float $lat, float $lng): array
     {
         $dLat = 0.36 * ($lat - 52.15517);

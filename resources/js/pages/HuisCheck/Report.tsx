@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 import AddressMap from '@/components/address-map';
 import AddressSearch from '@/components/address-search';
+import { useShortlist } from '@/hooks/use-shortlist';
 import HuisCheckLayout from '@/layouts/huischeck-layout';
 import type { AddressReport, BagData, ClimateData, EnergyData, RiskLevel, SoilData } from '@/types/huischeck';
 
@@ -175,11 +177,132 @@ const AGE_GROUPS = [
     { key: 'pct_65_plus' as const, color: '#FCA5A5', label: '65+' },
 ] as const;
 
+// ── Offerte Links ────────────────────────────────────────────────────────────
+
+// ── Affiliate Links ──────────────────────────────────────────────────────────
+// Replace placeholder URLs with your actual affiliate tracking links once approved.
+// Offerteadviseur: sign up at offerteadviseur.nl/affiliate-worden
+// Daisycon: sign up at daisycon.com, search for energy/isolatie campaigns
+
+interface OfferteLink {
+    label: string;
+    url: string;
+}
+
+const OFFERTE_CONFIG: Record<string, {
+    offerteadviseur: string;
+    daisycon?: string;
+    label_nl: string;
+}> = {
+    spouwmuurisolatie: {
+        offerteadviseur: 'isolatie',
+        daisycon: 'isolatie',
+        label_nl: 'isolatie',
+    },
+    dakisolatie: {
+        offerteadviseur: 'isolatie',
+        daisycon: 'isolatie',
+        label_nl: 'dakisolatie',
+    },
+    hr_glas: {
+        offerteadviseur: 'glas',
+        daisycon: 'kozijnen-en-glas',
+        label_nl: 'HR++ glas',
+    },
+    warmtepomp: {
+        offerteadviseur: 'warmtepomp',
+        daisycon: 'warmtepomp',
+        label_nl: 'warmtepomp',
+    },
+    zonnepanelen: {
+        offerteadviseur: 'zonnepanelen',
+        daisycon: 'zonnepanelen',
+        label_nl: 'zonnepanelen',
+    },
+};
+
+function buildOfferteLinks(improvementKey: string, postcode: string): OfferteLink[] {
+    const config = OFFERTE_CONFIG[improvementKey];
+    if (!config) return [];
+
+    const pc = encodeURIComponent(postcode.replace(/\s/g, ''));
+    const utm = `utm_source=huischeck&utm_medium=referral&utm_campaign=verduurzaming&utm_content=${improvementKey}`;
+    const links: OfferteLink[] = [];
+
+    // Primary: Offerteadviseur (50% revenue share)
+    links.push({
+        label: 'Offertes aanvragen',
+        url: `https://www.offerteadviseur.nl/${config.offerteadviseur}/?postcode=${pc}&${utm}`,
+    });
+
+    // Secondary: Daisycon / Homedeal (when you have a campaign link, replace this URL)
+    if (config.daisycon) {
+        links.push({
+            label: 'Vergelijk aanbieders',
+            url: `https://www.homedeal.nl/offertes/${config.daisycon}/?postcode=${pc}&${utm}`,
+        });
+    }
+
+    return links;
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 function Report({ report }: ReportProps) {
-    const { building, energy, soil, climate, neighborhood, nearby, coordinates } = report;
+    const { building, energy, energy_cost, soil, climate, neighborhood, nearby, coordinates } = report;
     const verdicts = buildVerdicts(building, energy, soil, climate);
+    const shortlist = useShortlist();
+    const saved = report.id ? shortlist.isSaved(report.id) : false;
+
+    function handleSave() {
+        if (!report.id) return;
+        if (saved) {
+            shortlist.remove(report.id);
+        } else {
+            shortlist.add({
+                id: report.id,
+                address: report.address,
+                postcode: report.postcode,
+                city: report.city,
+                energyLabel: report.energy?.label,
+                bouwjaar: report.building?.bouwjaar,
+                costMonth: report.energy_cost?.total.cost_month,
+                addedAt: new Date().toISOString(),
+            });
+        }
+    }
+
+    const [shared, setShared] = useState(false);
+
+    function handleShare() {
+        const url = `${window.location.origin}/report/${report.id}`;
+        const text = `HuisCheck rapport: ${report.address}`;
+
+        if (navigator.share) {
+            navigator.share({ title: text, url }).catch(() => {});
+            return;
+        }
+
+        // Clipboard fallback (works on HTTPS, fallback for HTTP)
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                setShared(true);
+                setTimeout(() => setShared(false), 2000);
+            });
+        } else {
+            // Last resort: textarea trick
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            setShared(true);
+            setTimeout(() => setShared(false), 2000);
+        }
+    }
 
     return (
         <div>
@@ -207,21 +330,55 @@ function Report({ report }: ReportProps) {
             {/* Title section */}
             <div style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.border}` }}>
                 <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-8">
-                    <Label>Adresrapportage</Label>
-                    <h1
-                        className="mt-1.5 text-xl font-bold tracking-tight sm:mt-2 sm:text-2xl"
-                        style={{ fontFamily: serif, color: C.navy }}
-                    >
-                        {report.address}
-                    </h1>
-                    <p className="mt-1 text-xs sm:text-sm" style={{ color: C.muted }}>
-                        {report.postcode} {report.city}
-                        {report.age_days != null && (
-                            <span className="ml-2 sm:ml-3" style={{ color: C.faint }}>
-                                Opgehaald {report.age_days === 0 ? 'vandaag' : `${report.age_days} dag${report.age_days !== 1 ? 'en' : ''} geleden`}
-                            </span>
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <Label>Adresrapportage</Label>
+                            <h1
+                                className="mt-1.5 text-xl font-bold tracking-tight sm:mt-2 sm:text-2xl"
+                                style={{ fontFamily: serif, color: C.navy }}
+                            >
+                                {report.address}
+                            </h1>
+                            <p className="mt-1 text-xs sm:text-sm" style={{ color: C.muted }}>
+                                {report.postcode} {report.city}
+                                {report.age_days != null && (
+                                    <span className="ml-2 sm:ml-3" style={{ color: C.faint }}>
+                                        Opgehaald {report.age_days === 0 ? 'vandaag' : `${report.age_days} dag${report.age_days !== 1 ? 'en' : ''} geleden`}
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        {report.id && (
+                            <div className="flex shrink-0 gap-2">
+                                <button
+                                    onClick={handleShare}
+                                    type="button"
+                                    className="rounded-md border px-3 py-2 text-xs font-semibold transition-all sm:px-4"
+                                    style={{
+                                        borderColor: shared ? C.green : C.border,
+                                        backgroundColor: shared ? C.greenBg : C.surface,
+                                        color: shared ? C.green : C.navy,
+                                    }}
+                                >
+                                    {shared ? '✓ Gekopieerd' : 'Deel'}
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    type="button"
+                                    className="rounded-md border px-3 py-2 text-xs font-semibold transition-all sm:px-4"
+                                    style={{
+                                        borderColor: saved ? C.gold : C.border,
+                                        backgroundColor: saved ? '#FDF8EF' : C.surface,
+                                        color: saved ? '#92400E' : C.navy,
+                                    }}
+                                    disabled={!saved && shortlist.isFull}
+                                    title={shortlist.isFull && !saved ? `Maximum ${shortlist.maxItems} adressen` : undefined}
+                                >
+                                    {saved ? '★ Bewaard' : '☆ Bewaar'}
+                                </button>
+                            </div>
                         )}
-                    </p>
+                    </div>
                 </div>
             </div>
 
@@ -288,6 +445,148 @@ function Report({ report }: ReportProps) {
                                     <Value large>{energy.energy_index}</Value>
                                 </div>
                             )}
+                        </div>
+                    )}
+                </Section>
+
+                {/* Energy Cost Estimate */}
+                <Section title="Geschatte energiekosten" available={!!energy_cost}>
+                    {energy_cost && (
+                        <div>
+                            {/* Monthly total - hero number */}
+                            <div className="mb-5 text-center sm:mb-6">
+                                <Label>Geschatte maandlasten energie</Label>
+                                <p
+                                    className="mt-1 text-3xl font-bold sm:text-4xl"
+                                    style={{ fontFamily: serif, color: C.navy }}
+                                >
+                                    €{energy_cost.total.cost_month}
+                                    <span className="text-base font-normal" style={{ color: C.faint }}>/mnd</span>
+                                </p>
+                                <p className="mt-1 text-sm" style={{ color: C.muted }}>
+                                    €{energy_cost.total.cost_year.toLocaleString('nl-NL')} per jaar
+                                </p>
+                            </div>
+
+                            {/* Breakdown */}
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                <div className="rounded-md px-3 py-3 text-center" style={{ backgroundColor: C.bg }}>
+                                    <Label>Gas</Label>
+                                    <p className="mt-1 text-base font-bold" style={{ color: C.text }}>
+                                        €{energy_cost.gas.cost_month}
+                                    </p>
+                                    <p className="text-[10px]" style={{ color: C.faint }}>
+                                        {energy_cost.gas.consumption_m3} m³/jaar
+                                    </p>
+                                </div>
+                                <div className="rounded-md px-3 py-3 text-center" style={{ backgroundColor: C.bg }}>
+                                    <Label>Stroom</Label>
+                                    <p className="mt-1 text-base font-bold" style={{ color: C.text }}>
+                                        €{energy_cost.electricity.cost_month}
+                                    </p>
+                                    <p className="text-[10px]" style={{ color: C.faint }}>
+                                        {energy_cost.electricity.consumption_kwh} kWh/jaar
+                                    </p>
+                                </div>
+                                <div className="rounded-md px-3 py-3 text-center" style={{ backgroundColor: C.bg }}>
+                                    <Label>Netwerk</Label>
+                                    <p className="mt-1 text-base font-bold" style={{ color: C.text }}>
+                                        €{energy_cost.network.cost_month}
+                                    </p>
+                                    <p className="text-[10px]" style={{ color: C.faint }}>
+                                        vast/maand
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Improvements */}
+                            {energy_cost.improvements.length > 0 && (
+                                <div className="mt-5 sm:mt-6">
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <Label>Verduurzamingsadvies</Label>
+                                        {energy_cost.potential_saving_year > 0 && (
+                                            <span
+                                                className="rounded px-2 py-0.5 text-xs font-semibold"
+                                                style={{ backgroundColor: C.greenBg, color: C.green }}
+                                            >
+                                                Tot €{energy_cost.potential_saving_year}/jaar besparen
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        {energy_cost.improvements.map((imp) => {
+                                            const links = buildOfferteLinks(imp.key, report.postcode);
+
+                                            return (
+                                                <div
+                                                    key={imp.key}
+                                                    className="rounded-md border px-4 py-3"
+                                                    style={{ borderColor: C.border }}
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-sm font-semibold" style={{ color: C.text }}>
+                                                                {imp.label}
+                                                            </p>
+                                                            <p className="mt-0.5 text-xs" style={{ color: C.muted }}>
+                                                                {imp.description}
+                                                            </p>
+                                                        </div>
+                                                        <div className="shrink-0 text-right">
+                                                            <p className="text-sm font-bold" style={{ color: C.green }}>
+                                                                -€{imp.saving_month}/mnd
+                                                            </p>
+                                                            <p className="text-[10px]" style={{ color: C.faint }}>
+                                                                terugverdientijd {imp.payback_years} jaar
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                                        <div className="flex gap-3">
+                                                            <span className="text-[10px]" style={{ color: C.faint }}>
+                                                                Investering: €{imp.cost_min.toLocaleString('nl-NL')} – €{imp.cost_max.toLocaleString('nl-NL')}
+                                                            </span>
+                                                            <span className="text-[10px]" style={{ color: C.faint }}>
+                                                                Besparing: €{imp.saving_year}/jaar
+                                                            </span>
+                                                        </div>
+                                                        {links.length > 0 && (
+                                                            <div className="flex gap-1.5">
+                                                                {links.map((link, i) => (
+                                                                    <a
+                                                                        key={i}
+                                                                        href={link.url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-80"
+                                                                        style={{
+                                                                            backgroundColor: i === 0 ? C.navy : 'transparent',
+                                                                            color: i === 0 ? '#FFFFFF' : C.navy,
+                                                                            border: i === 0 ? 'none' : `1px solid ${C.border}`,
+                                                                        }}
+                                                                    >
+                                                                        {link.label}
+                                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                                                            <polyline points="15 3 21 3 21 9" />
+                                                                            <line x1="10" y1="14" x2="21" y2="3" />
+                                                                        </svg>
+                                                                    </a>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Disclaimer */}
+                            <p className="mt-4 text-[10px] leading-relaxed" style={{ color: C.faint }}>
+                                {energy_cost.note}
+                            </p>
                         </div>
                     )}
                 </Section>

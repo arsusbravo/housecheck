@@ -1,5 +1,7 @@
 import { Head } from '@inertiajs/react';
 
+import ShortlistBar from '@/components/shortlist-bar';
+
 interface HuisCheckLayoutProps {
     children: React.ReactNode;
     title?: string;
@@ -18,7 +20,7 @@ export default function HuisCheckLayout({ children, title = 'HuisCheck' }: HuisC
                 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" />
             </Head>
             <div
-                className="min-h-screen"
+                className="min-h-screen pb-20"
                 style={{
                     fontFamily: "'Source Sans 3', sans-serif",
                     backgroundColor: '#F7F6F3',
@@ -47,6 +49,8 @@ export default function HuisCheckLayout({ children, title = 'HuisCheck' }: HuisC
                         </p>
                     </div>
                 </footer>
+
+                <ShortlistBar />
             </div>
         </>
     );

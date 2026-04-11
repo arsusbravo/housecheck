@@ -15,6 +15,7 @@ class HuisCheckOrchestrator
         private KlimaatService $klimaat,
         private CbsService $cbs,
         private NearbyService $nearby,
+        private EnergyCostService $energyCost,
     ) {}
 
     /**
@@ -62,6 +63,7 @@ class HuisCheckOrchestrator
                 'longitude' => $location['lng'],
                 'bag_data' => $data['bag'],
                 'energy_data' => $data['energy'],
+                'energy_cost_data' => $data['energy_cost'],
                 'soil_data' => $data['soil'],
                 'climate_data' => $data['climate'],
                 'neighborhood_data' => $data['neighborhood'],
@@ -109,9 +111,13 @@ class HuisCheckOrchestrator
         $neighborhoodData = $this->cbs->getByCoordinates($lat, $lng);
         $nearbyData = $this->nearby->getByCoordinates($lat, $lng);
 
+        // Phase 6: Energy cost calculation (uses BAG + EP-Online data, no API call)
+        $energyCostData = $this->energyCost->calculate($bagData, $energyData);
+
         return [
             'bag' => $bagData,
             'energy' => $energyData,
+            'energy_cost' => $energyCostData,
             'soil' => $soilData,
             'climate' => $climateData,
             'neighborhood' => $neighborhoodData,

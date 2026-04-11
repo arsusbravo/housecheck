@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AddressReport;
 use App\Services\HuisCheck\HuisCheckOrchestrator;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,29 +13,18 @@ class HuisCheckController extends Controller
         private HuisCheckOrchestrator $orchestrator,
     ) {}
 
-    /**
-     * Main search page.
-     */
     public function index()
     {
         return Inertia::render('HuisCheck/Index');
     }
 
-    /**
-     * Autocomplete endpoint (JSON, no Inertia).
-     */
     public function suggest(Request $request)
     {
         $request->validate(['q' => 'required|string|min:2|max:100']);
 
-        $suggestions = $this->orchestrator->suggest($request->q);
-
-        return response()->json($suggestions);
+        return response()->json($this->orchestrator->suggest($request->q));
     }
 
-    /**
-     * Run the full check and show the report.
-     */
     public function check(Request $request)
     {
         $request->validate([
@@ -53,15 +43,45 @@ class HuisCheckController extends Controller
         }
     }
 
-    /**
-     * View a previously generated report.
-     */
     public function show(int $id)
     {
-        $report = \App\Models\AddressReport::findOrFail($id);
+        $report = AddressReport::findOrFail($id);
 
         return Inertia::render('HuisCheck/Report', [
             'report' => $report->summary,
+        ]);
+    }
+
+    /**
+     * Compare multiple reports side-by-side.
+     */
+    public function compare(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = array_filter(array_map('intval', explode(',', $request->ids)));
+
+        if (count($ids) < 2) {
+            return redirect('/');
+        }
+
+        // Cap at 5
+        $ids = array_slice($ids, 0, 5);
+
+        $reports = AddressReport::whereIn('id', $ids)
+            ->get()
+            ->map(fn (AddressReport $r) => $r->summary)
+            ->values()
+            ->all();
+
+        if (count($reports) < 2) {
+            return redirect('/');
+        }
+
+        return Inertia::render('HuisCheck/Compare', [
+            'reports' => $reports,
         ]);
     }
 }

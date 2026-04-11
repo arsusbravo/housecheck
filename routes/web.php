@@ -7,6 +7,7 @@ use App\Http\Controllers\HuisCheckController;
 Route::get('/', [HuisCheckController::class, 'index'])->name('home');
 Route::get('/api/suggest', [HuisCheckController::class, 'suggest'])->name('huischeck.suggest');
 Route::get('/check', fn () => redirect('/'));
+Route::get('/compare', [HuisCheckController::class, 'compare'])->name('huischeck.compare');
 Route::post('/check', [HuisCheckController::class, 'check'])->name('huischeck.check');
 Route::get('/report/{id}', [HuisCheckController::class, 'show'])->name('huischeck.show');
 

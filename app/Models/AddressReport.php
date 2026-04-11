@@ -16,6 +16,7 @@ class AddressReport extends Model
         'longitude',
         'bag_data',
         'energy_data',
+        'energy_cost_data',
         'soil_data',
         'climate_data',
         'neighborhood_data',
@@ -29,6 +30,7 @@ class AddressReport extends Model
         return [
             'bag_data' => 'array',
             'energy_data' => 'array',
+            'energy_cost_data' => 'array',
             'soil_data' => 'array',
             'climate_data' => 'array',
             'neighborhood_data' => 'array',
@@ -68,6 +70,7 @@ class AddressReport extends Model
     public function getSummaryAttribute(): array
     {
         return [
+            'id' => $this->id,
             'address' => $this->address,
             'postcode' => $this->postcode,
             'city' => $this->city,
@@ -77,6 +80,7 @@ class AddressReport extends Model
             ],
             'building' => $this->bag_data,
             'energy' => $this->energy_data,
+            'energy_cost' => $this->energy_cost_data,
             'soil' => $this->soil_data,
             'climate' => $this->climate_data,
             'neighborhood' => $this->neighborhood_data,

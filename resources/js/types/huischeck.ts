@@ -100,7 +100,39 @@ export interface NearbyData {
     childcare: NearbyCategory;
 }
 
+export interface EnergyCostBreakdown {
+    consumption_m3?: number;
+    consumption_kwh?: number;
+    cost_year: number;
+    cost_month: number;
+    price_m3?: number;
+    price_kwh?: number;
+}
+
+export interface Improvement {
+    key: string;
+    label: string;
+    description: string;
+    cost_min: number;
+    cost_max: number;
+    saving_year: number;
+    saving_month: number;
+    payback_years: number;
+}
+
+export interface EnergyCostData {
+    gas: EnergyCostBreakdown;
+    electricity: EnergyCostBreakdown;
+    network: { cost_year: number; cost_month: number };
+    total: { cost_year: number; cost_month: number };
+    improvements: Improvement[];
+    potential_saving_year: number;
+    is_estimate: boolean;
+    note: string;
+}
+
 export interface AddressReport {
+    id?: number;
     address: string;
     postcode: string;
     city: string;
@@ -110,6 +142,7 @@ export interface AddressReport {
     };
     building: BagData | null;
     energy: EnergyData | null;
+    energy_cost: EnergyCostData | null;
     soil: SoilData | null;
     climate: ClimateData | null;
     neighborhood: NeighborhoodData | null;

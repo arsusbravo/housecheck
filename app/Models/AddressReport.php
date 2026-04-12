@@ -21,6 +21,7 @@ class AddressReport extends Model
         'climate_data',
         'neighborhood_data',
         'nearby_data',
+        'analyse_data',
         'raw_responses',
         'fetched_at',
     ];
@@ -35,6 +36,7 @@ class AddressReport extends Model
             'climate_data' => 'array',
             'neighborhood_data' => 'array',
             'nearby_data' => 'array',
+            'analyse_data' => 'array',
             'raw_responses' => 'array',
             'fetched_at' => 'datetime',
         ];
@@ -85,6 +87,7 @@ class AddressReport extends Model
             'climate' => $this->climate_data,
             'neighborhood' => $this->neighborhood_data,
             'nearby' => $this->nearby_data,
+            'analyse' => $this->analyse_data,
             'fetched_at' => $this->fetched_at?->toIso8601String(),
             'age_days' => $this->fetched_at?->diffInDays(now()),
         ];

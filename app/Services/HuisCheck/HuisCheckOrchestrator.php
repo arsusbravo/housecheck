@@ -16,6 +16,7 @@ class HuisCheckOrchestrator
         private CbsService $cbs,
         private NearbyService $nearby,
         private EnergyCostService $energyCost,
+        private BiedingsAnalyseService $analyse,
     ) {}
 
     /**
@@ -68,6 +69,7 @@ class HuisCheckOrchestrator
                 'climate_data' => $data['climate'],
                 'neighborhood_data' => $data['neighborhood'],
                 'nearby_data' => $data['nearby'],
+                'analyse_data' => $data['analyse'],
                 'raw_responses' => $data['raw'] ?? null,
                 'fetched_at' => now(),
             ]
@@ -114,6 +116,12 @@ class HuisCheckOrchestrator
         // Phase 6: Energy cost calculation (uses BAG + EP-Online data, no API call)
         $energyCostData = $this->energyCost->calculate($bagData, $energyData);
 
+        // Phase 7: Buyer analysis (uses all data, no API call)
+        $analyseData = $this->analyse->analyse(
+            $bagData, $energyData, $energyCostData,
+            $soilData, $neighborhoodData, $nearbyData,
+        );
+
         return [
             'bag' => $bagData,
             'energy' => $energyData,
@@ -122,6 +130,7 @@ class HuisCheckOrchestrator
             'climate' => $climateData,
             'neighborhood' => $neighborhoodData,
             'nearby' => $nearbyData,
+            'analyse' => $analyseData,
         ];
     }
 }

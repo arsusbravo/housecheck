@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('address_reports', function (Blueprint $table) {
-            $table->text('energy_cost_data')->nullable()->after('energy_data');
+            $table->text('analyse_data')->nullable()->after('nearby_data');
         });
     }
 
     public function down(): void
     {
         Schema::table('address_reports', function (Blueprint $table) {
-            $table->dropColumn('energy_cost_data');
+            $table->dropColumn('analyse_data');
         });
     }
 };

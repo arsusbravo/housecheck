@@ -1,7 +1,7 @@
 export default function LoadingOverlay() {
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-9999 flex items-center justify-center"
             style={{ backgroundColor: 'rgba(247, 246, 243, 0.95)' }}
         >
             <div className="text-center">

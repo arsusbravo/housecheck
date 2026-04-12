@@ -131,6 +131,25 @@ export interface EnergyCostData {
     note: string;
 }
 
+export interface AnalyseItem {
+    title: string;
+    detail: string;
+}
+
+export interface AnalyseVerdict {
+    level: 'positief' | 'neutraal' | 'voorzichtig' | 'negatief';
+    title: string;
+    summary: string;
+}
+
+export interface AnalyseData {
+    score: number;
+    verdict: AnalyseVerdict;
+    strengths: AnalyseItem[];
+    risks: AnalyseItem[];
+    let_op: string[];
+}
+
 export interface AddressReport {
     id?: number;
     address: string;
@@ -147,6 +166,7 @@ export interface AddressReport {
     climate: ClimateData | null;
     neighborhood: NeighborhoodData | null;
     nearby: NearbyData | null;
+    analyse: AnalyseData | null;
     fetched_at: string | null;
     age_days: number | null;
 }

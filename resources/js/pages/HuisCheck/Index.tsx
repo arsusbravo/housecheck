@@ -21,7 +21,7 @@ function Index() {
                         className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
                         style={{ fontFamily: "'Libre Baskerville', serif", color: '#0B1D3A' }}
                     >
-                        HuisCheck blabla arsus
+                        HuisChecker
                     </h1>
                     <p className="text-sm leading-relaxed sm:text-base" style={{ color: '#6B6560' }}>
                         Onafhankelijke adresrapportage op basis van overheidsdata.

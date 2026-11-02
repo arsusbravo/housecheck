@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     env_file: .env.docker
     environment:
       RUN_MIGRATIONS: "true"
@@ -24,6 +24,20 @@ services:
       - storage:/var/www/html/storage
     restart: unless-stopped
 
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env.docker
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - app
+    restart: unless-stopped
+
   mysql:
     image: mysql:8.4
     env_file: .env.docker
@@ -39,5 +53,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  caddy_data:
   mysql:
   storage:
